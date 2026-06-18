@@ -231,50 +231,143 @@
   z-index: 50;
 }
 
-.modal-panel {
+.device-panel {
   width: 100%;
-  max-width: 380px;
-  padding: 1.5rem;
-  background: var(--bg-panel);
-  border: 1px solid var(--border-color-dim);
-  backdrop-filter: blur(12px);
-  border-radius: 8px;
+  height: 100%;
+  max-width: 480px;
+  background-color: #0f0f0f;
+  display: flex;
+  flex-direction: column;
 }
 
-.modal-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: var(--accent-primary);
-  margin-bottom: 1rem;
+.device-header {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  padding: 1rem;
+  background-color: #1a1a1a;
+  border-bottom: 1px solid #2a2a2a;
 }
 
-.modal-actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.btn-secondary {
-  flex: 1;
-  padding: 0.5rem;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
+.device-back-btn {
   background: none;
-  color: var(--text-secondary);
-  font-size: 0.75rem;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+}
+
+.device-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.device-save-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
   font-weight: 600;
   cursor: pointer;
-  transition: background-color 0.2s;
+  opacity: 0.5;
 }
 
-.btn-secondary:hover {
-  background-color: rgba(255, 255, 255, 0.05);
+.device-save-btn.active {
+  opacity: 1;
 }
 
-.btn-primary.flex-1 {
+.device-form {
   flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.device-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  border-bottom: 1px solid #1f1f1f;
+  background-color: #161616;
+}
+
+.device-row.link {
+  margin-top: 1rem;
+}
+
+.device-label {
+  font-size: 0.875rem;
+  color: #d1d5db;
+}
+
+.device-input {
+  background: none;
+  border: none;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-family: inherit;
+  outline: none;
+}
+
+.device-input.select {
+  text-align: right;
+  direction: rtl;
+  color: #e5e7eb;
+}
+
+.device-input.text-right {
+  text-align: right;
+}
+
+.device-status {
+  font-size: 0.875rem;
+  color: #9ca3af;
+}
+
+.device-status.online {
+  color: #e5e7eb;
+}
+
+.device-channels-header {
+  padding: 0.5rem 1rem;
   font-size: 0.75rem;
+  color: #6b7280;
+  background-color: #0f0f0f;
+  border-bottom: 1px solid #1f1f1f;
+}
+
+.device-channels-list {
+  display: flex;
+  flex-direction: column;
+  background-color: #161616;
+}
+
+.device-channel-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  border-bottom: 1px solid #1f1f1f;
+  cursor: pointer;
+}
+
+.channel-radio {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #4b5563;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.channel-radio.selected {
+  border-color: #22c55e;
+}
+
+.channel-name {
+  color: #e5e7eb;
+  font-size: 0.875rem;
 }

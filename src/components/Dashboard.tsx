@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Shield, Settings, Users, LogOut, Video, PlusSquare, AlertOctagon, Download } from 'lucide-react';
+import { Shield, Settings, Users, LogOut, Video, PlusSquare, AlertOctagon, Download, ChevronLeft, CheckCircle2 } from 'lucide-react';
 import WebcamStream from './WebcamStream';
 import './Dashboard.css';
 
@@ -26,24 +26,35 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [cameras, setCameras] = useState<Camera[]>([
     { id: 'CAM-01', name: 'Browser Live Cam', isMock: false },
-    { id: 'CAM-02', name: 'DVR-Main-Ent', isMock: true },
-    { id: 'CAM-03', name: 'DVR-Server-Rm', isMock: true },
-    { id: 'CAM-04', name: 'DVR-Parking', isMock: true },
   ]);
+  
+  // Add Device Modal State
   const [showAddDVR, setShowAddDVR] = useState(false);
+  const [addMode, setAddMode] = useState('InstaOn');
   const [serialNo, setSerialNo] = useState('');
+  const [deviceName, setDeviceName] = useState('Home');
+  const [username, setUsername] = useState('admin');
   const [dvrPassword, setDvrPassword] = useState('');
+  const [isConnecting, setIsConnecting] = useState(false);
+  const [deviceStatus, setDeviceStatus] = useState<'Offline' | 'Online'>('Offline');
+  const [linkedChannels, setLinkedChannels] = useState([
+    { id: '1', name: 'CAM 1', selected: true },
+    { id: '2', name: 'CAM 2', selected: true },
+    { id: '3', name: 'CAM 3', selected: true },
+    { id: '4', name: 'CAM 4', selected: true },
+  ]);
 
   // Mock AI Engine Alerts
   useEffect(() => {
     const threatTypes = ['Suspicious Person', 'Weapon Detected', 'Intrusion (Zone A)', 'Aggressive Behavior'];
     
     const interval = setInterval(() => {
-      if (Math.random() > 0.6) {
+      if (Math.random() > 0.6 && cameras.length > 0) {
+        const randomCam = cameras[Math.floor(Math.random() * cameras.length)];
         const newAlert: Alert = {
           id: Math.random().toString(36).substring(7),
           type: threatTypes[Math.floor(Math.random() * threatTypes.length)],
-          camera: `CAM-0${Math.floor(Math.random() * 4) + 1}`,
+          camera: randomCam.id,
           time: new Date().toLocaleTimeString([], { hour12: false }),
           severity: Math.random() > 0.8 ? 'critical' : Math.random() > 0.5 ? 'high' : 'medium',
           confidence: Math.floor(Math.random() * 20 + 80)
@@ -52,19 +63,42 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, []);
+  }, [cameras]);
 
-  const handleAddDVR = (e: React.FormEvent) => {
-    e.preventDefault();
-    const newCam = {
-      id: `CAM-0${cameras.length + 1}`,
-      name: `DVR-${serialNo.substring(0,4)}`,
-      isMock: true
-    };
-    setCameras([...cameras, newCam]);
-    setShowAddDVR(false);
-    setSerialNo('');
-    setDvrPassword('');
+  const handleSimulateConnection = () => {
+    if (serialNo.length > 5) {
+      setIsConnecting(true);
+      setTimeout(() => {
+        setDeviceStatus('Online');
+        setIsConnecting(false);
+      }, 1000);
+    }
+  };
+
+  const handleSaveDevice = () => {
+    if (deviceStatus === 'Online') {
+      const newCams = linkedChannels
+        .filter(ch => ch.selected)
+        .map(ch => ({
+          id: `CAM-${Math.floor(Math.random()*1000)}`,
+          name: `${deviceName} - ${ch.name}`,
+          isMock: true
+        }));
+      setCameras([...cameras, ...newCams]);
+      setShowAddDVR(false);
+      
+      // Reset state
+      setDeviceStatus('Offline');
+      setSerialNo('');
+      setDeviceName('Home');
+      setDvrPassword('');
+    }
+  };
+
+  const toggleChannel = (id: string) => {
+    setLinkedChannels(channels => 
+      channels.map(ch => ch.id === id ? { ...ch, selected: !ch.selected } : ch)
+    );
   };
 
   return (
@@ -94,10 +128,8 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
 
       {/* Main Content Layout */}
       <div className="dashboard-main">
-        
         {/* Left Side: Camera Grid */}
         <div className="feed-section">
-          
           <div className="section-header">
             <h2 className="section-title">
               <Video className="w-4 h-4" /> 
@@ -107,7 +139,7 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               onClick={() => setShowAddDVR(true)}
               className="action-btn"
             >
-              <PlusSquare className="w-3.5 h-3.5" /> ADD DVR
+              <PlusSquare className="w-3.5 h-3.5" /> ADD DEVICE
             </button>
           </div>
 
@@ -116,7 +148,6 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
               <WebcamStream key={cam.id} id={cam.id} name={cam.name} isMock={cam.isMock} />
             ))}
           </div>
-
         </div>
 
         {/* Right Side: Alert Sidebar */}
@@ -154,41 +185,113 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
         </aside>
       </div>
 
-      {/* Add DVR Modal */}
+      {/* Advanced Add Device Modal (iCMOB style) */}
       {showAddDVR && (
         <div className="modal-overlay">
-          <div className="modal-panel">
-            <h3 className="modal-title">
-              <PlusSquare className="w-5 h-5" /> ADD DVR (iCMOB)
-            </h3>
-            <form onSubmit={handleAddDVR} className="login-form">
-              <div className="input-group">
-                <label className="input-label">Serial Number</label>
+          <div className="device-panel">
+            <div className="device-header">
+              <button onClick={() => setShowAddDVR(false)} className="device-back-btn">
+                <ChevronLeft className="w-5 h-5 text-red-500" />
+              </button>
+              <h3 className="device-title">Home</h3>
+              <button 
+                onClick={handleSaveDevice}
+                className={`device-save-btn ${deviceStatus === 'Online' ? 'active' : ''}`}
+              >
+                Save
+              </button>
+            </div>
+
+            <div className="device-form">
+              <div className="device-row">
+                <span className="device-label">Add Mode</span>
+                <select className="device-input select" value={addMode} onChange={e => setAddMode(e.target.value)}>
+                  <option>InstaOn</option>
+                  <option>IP/Domain</option>
+                </select>
+              </div>
+              
+              <div className="device-row">
+                <span className="device-label">Device Status:</span>
+                <span className={`device-status ${deviceStatus === 'Online' ? 'online' : 'offline'}`}>
+                  {isConnecting ? 'Connecting...' : deviceStatus}
+                </span>
+              </div>
+
+              <div className="device-row">
+                <span className="device-label">SN:</span>
                 <input 
                   type="text" 
-                  required 
-                  className="input-field"
-                  placeholder="e.g. 4C0123456789"
+                  className="device-input text-right"
+                  placeholder="Enter Serial Number"
                   value={serialNo}
-                  onChange={e => setSerialNo(e.target.value)}
+                  onChange={e => {
+                    setSerialNo(e.target.value);
+                    setDeviceStatus('Offline');
+                  }}
+                  onBlur={handleSimulateConnection}
                 />
               </div>
-              <div className="input-group">
-                <label className="input-label">Device Password</label>
+
+              <div className="device-row">
+                <span className="device-label">Name:</span>
+                <input 
+                  type="text" 
+                  className="device-input text-right"
+                  value={deviceName}
+                  onChange={e => setDeviceName(e.target.value)}
+                />
+              </div>
+
+              <div className="device-row">
+                <span className="device-label">Username:</span>
+                <input 
+                  type="text" 
+                  className="device-input text-right"
+                  value={username}
+                  onChange={e => setUsername(e.target.value)}
+                />
+              </div>
+
+              <div className="device-row">
+                <span className="device-label">Password:</span>
                 <input 
                   type="password" 
-                  required 
-                  className="input-field"
-                  placeholder="Admin password"
+                  className="device-input text-right"
+                  placeholder="Required"
                   value={dvrPassword}
-                  onChange={e => setDvrPassword(e.target.value)}
+                  onChange={e => {
+                    setDvrPassword(e.target.value);
+                    setDeviceStatus('Offline');
+                  }}
+                  onBlur={handleSimulateConnection}
                 />
               </div>
-              <div className="modal-actions">
-                <button type="button" onClick={() => setShowAddDVR(false)} className="btn-secondary">CANCEL</button>
-                <button type="submit" className="btn-primary flex-1">CONNECT</button>
+
+              <div className="device-row link">
+                <span className="device-label text-gray-300">Modify Device Password</span>
               </div>
-            </form>
+
+              <div className="device-channels-header">
+                Linked Channel
+              </div>
+              
+              <div className="device-channels-list">
+                {linkedChannels.map(channel => (
+                  <div 
+                    key={channel.id} 
+                    className="device-channel-row"
+                    onClick={() => toggleChannel(channel.id)}
+                  >
+                    <div className={`channel-radio ${channel.selected ? 'selected' : ''}`}>
+                      {channel.selected && <CheckCircle2 className="w-4 h-4 text-green-500" />}
+                    </div>
+                    <span className="channel-name">{channel.name}</span>
+                  </div>
+                ))}
+              </div>
+
+            </div>
           </div>
         </div>
       )}
