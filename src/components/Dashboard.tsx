@@ -28,6 +28,23 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     { id: 'CAM-01', name: 'Browser Live Cam', isMock: false },
   ]);
   
+  // Load devices from API on mount
+  useEffect(() => {
+    fetch('http://localhost:3000/api/devices')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.devices.length > 0) {
+          const apiCams = data.devices.map((d: any) => ({
+            id: d.id,
+            name: `${d.name} (${d.serialNo})`,
+            isMock: true
+          }));
+          setCameras(prev => [...prev, ...apiCams]);
+        }
+      })
+      .catch(err => console.error("Failed to load devices", err));
+  }, []);
+  
   // Add Device Modal State
   const [showAddDVR, setShowAddDVR] = useState(false);
   const [addMode, setAddMode] = useState('InstaOn');
@@ -75,23 +92,44 @@ const Dashboard: React.FC<DashboardProps> = ({ onLogout }) => {
     }
   };
 
-  const handleSaveDevice = () => {
+  const handleSaveDevice = async () => {
     if (deviceStatus === 'Online') {
-      const newCams = linkedChannels
-        .filter(ch => ch.selected)
-        .map(ch => ({
-          id: `CAM-${Math.floor(Math.random()*1000)}`,
-          name: `${deviceName} - ${ch.name}`,
-          isMock: true
-        }));
-      setCameras([...cameras, ...newCams]);
-      setShowAddDVR(false);
-      
-      // Reset state
-      setDeviceStatus('Offline');
-      setSerialNo('');
-      setDeviceName('Home');
-      setDvrPassword('');
+      try {
+        // Only saving the primary device details to the DB in Phase 1
+        const response = await fetch('http://localhost:3000/api/devices', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            serialNo,
+            name: deviceName,
+            username,
+            password: dvrPassword,
+            status: 'online'
+          })
+        });
+        
+        const data = await response.json();
+        if (data.success) {
+          const newCams = linkedChannels
+            .filter(ch => ch.selected)
+            .map(ch => ({
+              id: `CAM-${Math.random().toString(36).substr(2, 5)}`,
+              name: `${deviceName} - ${ch.name}`,
+              isMock: true
+            }));
+          setCameras([...cameras, ...newCams]);
+          setShowAddDVR(false);
+          
+          setDeviceStatus('Offline');
+          setSerialNo('');
+          setDeviceName('Home');
+          setDvrPassword('');
+        } else {
+          alert('Failed to save device: ' + data.message);
+        }
+      } catch (err) {
+        alert('API Connection Error');
+      }
     }
   };
 

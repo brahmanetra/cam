@@ -11,12 +11,24 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [password, setPassword] = useState('admin123');
   const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (email === 'admin@mahanetra.com' && password === 'admin123') {
-      onLogin();
-    } else {
-      setError('Access Denied. Invalid credentials.');
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      });
+      
+      const data = await response.json();
+      if (data.success) {
+        localStorage.setItem('mahanetra_token', data.token);
+        onLogin();
+      } else {
+        setError(data.message || 'Access Denied. Invalid credentials.');
+      }
+    } catch (err) {
+      setError('Connection to Command Server failed.');
     }
   };
 
